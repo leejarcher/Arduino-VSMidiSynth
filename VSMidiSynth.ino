@@ -1,5 +1,6 @@
 /*************************************************** 
         Real time MIDI input via USB and SPI
+        Adding MIDI file playback 26/04/22
         (C) Lee J Archer 2022
  ****************************************************/
 
@@ -26,6 +27,7 @@
 #define DREQ 2       // VS1053 Data request, ideally an Interrupt pin
 
 Adafruit_VS1053_FilePlayer synth = Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS); // realtime MIDI synth instance
+
 byte midiByte;
 
 // *************************************************************************
@@ -33,15 +35,36 @@ byte midiByte;
   
 void setup() {
   
-  Serial.begin(115200); // for debugging
+  Serial.begin(115200);
   synth.begin();
   SD.begin(CARDCS);
+
+  // ****** Start playing MIDI file under interrupt control ******
  
   synth.setVolume(10, 10); // lower numbers higher volume
+  synth.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
+  synth.startPlayingFile("/midiFile.mid");
+
+  // ***********Loop until MIDI byte 60 received (C3) **********
+  
+  while (Serial.read() != 60) {}
+  
+  synth.stopPlaying();
+
+  /******************** Clear Serial Buffer ********************
+  
+  while (Serial.available() {
+  Serial.read();
+  }*/
+
+  // *************** Put VS in real time MIDI mode *************** 
+  
   LoadUserCode(); // load real time midi plugin to VS1053
   synth.sciWrite(VS1053_SCI_AIADDR, 0x50); // run the code
-
+  
 }
+
+// *************************************************************************
 
 void loop() {
   
@@ -57,6 +80,7 @@ void loop() {
 }
 
 // ************ User application code loading tables for VS10xx ************
+
 
 #ifndef SKIP_PLUGIN_VARNAME
 #define PLUGIN_SIZE 28
